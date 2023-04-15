@@ -8,4 +8,5 @@ to deploy: add provider http-server ( from registry wasmcloud.azurecr.io/httpser
 3. chatlog, agent for translation. To deploy, also deploy providers: http-client (wasmcloud.azurecr.io/httpclient:0.6.0) with contract ID 	wasmcloud:httpclient and key value provider( wasmcloud.azurecr.io/kvredis:0.17.0) with contract ID wasmcloud:keyvalue. Add correponding links. The links with redis (key value provider) should contain the following key value URL=redis://127.0.0.1:6379
 
 
-Sending requests: curl -X POST http://localhost:8080/messages -d '{"user_name": "tester", "body": "sheep!"}'  
+Sending requests: curl -X POST http://localhost:8080/messages -d '{"user_name": "tester", "body": "sheep!"}' 
+Currently the reponse is : [{"detectedLanguage":{"language":"en","score":1.0},"translations":[{"text":"Schaf!","to":"de"}]}]%         will be changed to just schaf 
