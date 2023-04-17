@@ -39,8 +39,10 @@ impl Chatlog for ApiGatewayActor {
 
     // TODO: delete this in the end, it is only for debugging
     async fn get_messages(&self, ctx: &Context) -> RpcResult<MessagesList> {
-        let chatlog = ChatlogSender::to_actor(CHATLOG_ACTOR);
-        
-        chatlog.get_messages(ctx).await
+        // let chatlog = ChatlogSender::to_actor(CHATLOG_ACTOR);
+
+        let cohere = ChatlogSender::to_actor(COHERE_ACTOR);
+
+        cohere.get_messages(ctx).await
     }
 }
