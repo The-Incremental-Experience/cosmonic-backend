@@ -58,10 +58,13 @@ impl Chatlog for ChatgptActor {
         }
         
         }
+
+        let response_body = std::str::from_utf8(&translation_response.body).unwrap();
+      
         
         Ok(TransformMessageResponse {
             success: true,
-            result: Some(processed_message.to_string()),
+            result: Some(response_body.to_string()),
         })
     }
 
@@ -71,6 +74,7 @@ impl Chatlog for ChatgptActor {
                 body: "test message".to_string(),
                 channel_name: "test channel".to_string(),
                 id: "test id".to_string(),
+                method: "smth".to_string(),
                 source_user: "test user".to_string(),
             }])
         }

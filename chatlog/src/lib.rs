@@ -46,16 +46,18 @@ impl Chatlog for ChatlogActor {
         let response_body = std::str::from_utf8(&translation_response.body).unwrap();
       
         let match_result = response_body.match_indices("\"text\":\"").next();
-        let match_end = response_body.match_indices("\"}],\"prompt\"").next();
+        let match_end = response_body.match_indices("\"}],\"to\"").next();
         if match_result.is_some() && match_end.is_some() {
             processed_message = "{\"message\": \"".to_owned() + &response_body[(match_result.unwrap().0 + 8)..match_end.unwrap().0] + "\"}"
         }
         
         }
 
+        let response_body = std::str::from_utf8(&translation_response.body).unwrap();
+      
         Ok(TransformMessageResponse {
             success: true,
-            result: Some(processed_message.to_string()),
+            result: Some(response_body.to_string()),
         })
     }
 
@@ -65,6 +67,7 @@ impl Chatlog for ChatlogActor {
             body: "test message".to_string(),
             channel_name: "test channel".to_string(),
             id: "test id".to_string(),
+            method: "smth".to_string(),
             source_user: "test user".to_string(),
         }])
     }
