@@ -1,0 +1,8 @@
+name = "chatgpt"
+language = "rust"
+type = "actor"
+version = "0.1.0"
+
+[actor]
+claims = ["cosmonic:samples:chatlog", "wasmcloud:builtin:logging", "wasmcloud:httpclient"]
+call_alias = "mcchat/chatgpt"

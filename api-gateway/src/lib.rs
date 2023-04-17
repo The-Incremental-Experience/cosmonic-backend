@@ -11,6 +11,7 @@ mod outbound;
 
 const CHATLOG_ACTOR:&str = "mcchat/chatlog";
 const COHERE_ACTOR:&str = "mcchat/cohere";
+const CHATGPT_ACTOR:&str = "mcchat/chatgpt";
 
 #[derive(Debug, Default, Actor, HealthResponder)]
 #[services(Actor, Chatlog)]
@@ -31,8 +32,11 @@ impl Chatlog for ApiGatewayActor {
         // let chatlog = ChatlogSender::to_actor(CHATLOG_ACTOR);
         // let res = chatlog.transform_message(ctx, arg).await;
 
-        let cohere = ChatlogSender::to_actor(COHERE_ACTOR);
-        let res = cohere.transform_message(ctx, arg).await;
+        // let cohere = ChatlogSender::to_actor(COHERE_ACTOR);
+        // let res = cohere.transform_message(ctx, arg).await;
+
+        let chatgpt = ChatlogSender::to_actor(CHATGPT_ACTOR);
+        let res = chatgpt.transform_message(ctx, arg).await;
 
         res
     }
@@ -40,9 +44,9 @@ impl Chatlog for ApiGatewayActor {
     // TODO: delete this in the end, it is only for debugging
     async fn get_messages(&self, ctx: &Context) -> RpcResult<MessagesList> {
         // let chatlog = ChatlogSender::to_actor(CHATLOG_ACTOR);
+        // let cohere = ChatlogSender::to_actor(COHERE_ACTOR);
+        let chatlog = ChatlogSender::to_actor(CHATLOG_ACTOR);
 
-        let cohere = ChatlogSender::to_actor(COHERE_ACTOR);
-
-        cohere.get_messages(ctx).await
+        chatlog.get_messages(ctx).await
     }
 }
