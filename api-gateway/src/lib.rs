@@ -1,5 +1,6 @@
 use chatlog::*;
 use outbound::{Outbound, OutboundMessage, OutboundSender};
+use serde::Deserialize;
 use wasmbus_rpc::actor::prelude::*;
 use wasmcloud_interface_logging::{error, info};
 use serde_json;
@@ -10,9 +11,9 @@ mod chatlog;
 #[allow(dead_code)]
 mod outbound;
 
-const CHATLOG_ACTOR: &str = "mcchat/chatlog";
-const COHERE_ACTOR: &str = "mcchat/cohere";
 const CHATGPT_ACTOR: &str = "mcchat/chatgpt";
+const COHERE_ACTOR: &str = "mcchat/cohere";
+const CHATLOG_ACTOR: &str = "mcchat/chatlog";
 
 #[derive(Debug, Default, Actor, HealthResponder)]
 #[services(Actor, Chatlog)]
@@ -29,12 +30,15 @@ impl Chatlog for ApiGatewayActor {
         ctx: &Context,
         arg: &CanonicalChatMessage,
     ) -> RpcResult<TransformMessageResponse> {
-        let body: serde_json::Value = serde_json::from_str(&arg.body).unwrap();
+        
+        info!("{:?}", arg.clone());
+        //let body: serde_json::Value = serde_json::from_str(&arg.body).unwrap();
         // todo: use body["method"].as_str().unwrap() instead of "prettify"
-        let actor_id: &str = self.get_routing("prettify").await;
-        let mut arg2 = arg.clone();
+
+        let actor_id: &str = self.get_routing(&arg.method).await;
+        //let mut arg2 = arg.clone();
         // todo: use body["body"] instead of "sheep"
-        arg2.body = String::from("sheep");
+        //arg2.body = "sheep".to_owned();
 
         let service_actor = ChatlogSender::to_actor(actor_id);
         service_actor.transform_message(ctx, arg).await

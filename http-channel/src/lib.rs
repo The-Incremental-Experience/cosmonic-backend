@@ -53,10 +53,11 @@ async fn transform_message(ctx: &Context, im: IncomingMessage) -> RpcResult<Http
         .transform_message(
             ctx,
             &CanonicalChatMessage {
-                body: im.body,
+                body: im.body.body,
                 channel_name: CHANNEL_NAME.to_string(),
                 id: guid,
-                source_user: im.user_name,
+                method: im.method,
+                source_user: im.body.user_name,
             },
         )
         .await
@@ -77,6 +78,11 @@ fn deser<'de, T: Deserialize<'de>>(raw: &'de [u8]) -> RpcResult<T> {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct IncomingMessage {
+    method: String,
+    body: IncomingMessageinner,
+}
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct IncomingMessageinner {
     user_name: String,
     body: String,
 }
