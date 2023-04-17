@@ -4,6 +4,7 @@ use wasmcloud_interface_httpclient::*;
 
 #[allow(dead_code)]
 mod chatlog;
+mod store;
 
 const COHERE_URL: &str = "https://api.cohere.ai/v1/generate";
 
@@ -48,19 +49,26 @@ impl Chatlog for CohereActor {
             processed_message = "{\"message\": \"".to_owned() + &response_body[(match_result.unwrap().0 + 8)..match_end.unwrap().0] + "\"}"
         }
 
-        Ok(TransformMessageResponse {
-            success: true,
-            result: Some(processed_message),
+        let mut arg2 = arg.clone();
+        arg2.body = processed_message;
+
+        Ok(match store::write_message(ctx, &arg2).await {
+            Ok(_) => TransformMessageResponse {
+                success: true,
+                result: Some(arg2.body),
+            },
+            Err(e) => TransformMessageResponse {
+                success: false,
+                result: None,
+            },
         })
     }
 
 
-    async fn get_messages(&self, _ctx: &Context) -> RpcResult<MessagesList> {
-        Ok(vec![CanonicalChatMessage {
-            body: "test message".to_string(),
-            channel_name: "test channel".to_string(),
-            id: "test id".to_string(),
-            source_user: "test user".to_string(),
-        }])
+    async fn get_messages(&self, ctx: &Context) -> RpcResult<MessagesList> {
+        Ok(match store::get_messages(ctx).await {
+            Ok(v) => v,
+            Err(_) => vec![],
+        })
     }
 }
