@@ -25,7 +25,9 @@ impl Chatlog for CohereActor {
         headers.insert("authorization".to_string(), vec!["Bearer wilJVepgbMNVHebtIy8hYVnAQhvoJu5Qkp9UQEW2".to_string()]);
         headers.insert("content-type".to_string(), vec!["application/json".to_string()]);
 
-        let body = "{\"max_tokens\": 20, \"return_likelihoods\": \"NONE\", \"truncate\": \"END\", \"prompt\": \"".to_owned() + &arg.body.to_owned() + "\"}";
+        let body = "{\"max_tokens\": 20, \"return_likelihoods\": \"NONE\", \"truncate\": \"END\", \"prompt\": \"".to_owned()
+            + &arg.body.to_owned()
+            + "\"}";
         let request = HttpRequest {
             method: "POST".to_string(),
             url: COHERE_URL.to_string(),
@@ -33,28 +35,32 @@ impl Chatlog for CohereActor {
             body: Vec::from(body),
         };
 
-        // Translate the message
+        // Process the message
         let cohere_response = client
             .request(
                 ctx, &request).await?;
 
-
-        let mut translation_body: String = cohere_response.status_code.to_string();
-        translation_body.push_str(std::str::from_utf8(&cohere_response.body).unwrap());
-
-
-        let mut arg2 = arg.clone();
-        arg2.body = translation_body.to_string();
-
+        let response_body: &str = std::str::from_utf8(&cohere_response.body).unwrap();
+        let mut processed_message = (&arg.body).to_owned();
+        let match_result = response_body.match_indices("\"text\":\"").next();
+        let match_end = response_body.match_indices("\"}],\"prompt\"").next();
+        if match_result.is_some() && match_end.is_some() {
+            processed_message = "{\"message\": \"".to_owned() + &response_body[(match_result.unwrap().0 + 8)..match_end.unwrap().0] + "\"}"
+        }
 
         Ok(TransformMessageResponse {
             success: true,
-            result: Some(translation_body.to_string()),
+            result: Some(processed_message),
         })
     }
 
 
-    async fn get_messages(&self, ctx: &Context) -> RpcResult<MessagesList> {
-        Ok(vec![])
+    async fn get_messages(&self, _ctx: &Context) -> RpcResult<MessagesList> {
+        Ok(vec![CanonicalChatMessage {
+            body: "test message".to_string(),
+            channel_name: "test channel".to_string(),
+            id: "test id".to_string(),
+            source_user: "test user".to_string(),
+        }])
     }
 }
