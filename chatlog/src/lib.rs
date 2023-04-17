@@ -1,6 +1,8 @@
 use chatlog::*;
+use serde::{Serialize, Deserialize};
 use wasmbus_rpc::actor::prelude::*;
 use wasmcloud_interface_httpclient::*;
+use wasmcloud_interface_logging::info;
 
 #[allow(dead_code)]
 mod chatlog;
@@ -43,21 +45,19 @@ impl Chatlog for ChatlogActor {
         
         if translation_response.status_code == 200{
     
-        let response_body = std::str::from_utf8(&translation_response.body).unwrap();
-      
-        let match_result = response_body.match_indices("\"text\":\"").next();
-        let match_end = response_body.match_indices("\"}],\"to\"").next();
-        if match_result.is_some() && match_end.is_some() {
-            processed_message = "{\"message\": \"".to_owned() + &response_body[(match_result.unwrap().0 + 8)..match_end.unwrap().0] + "\"}"
-        }
+            let response_body = std::str::from_utf8(&translation_response.body).unwrap();
+            info!(" HEREEE {:?}", response_body.clone());
+            let chat_completion:  Vec<ChatCompletion> = serde_json::from_str(response_body).unwrap();
+            info!("HEREEEE {:?}", chat_completion);
+            processed_message = chat_completion[0].translations[0].text.clone();
         
         }
 
-        let response_body = std::str::from_utf8(&translation_response.body).unwrap();
+        //let response_body = std::str::from_utf8(&translation_response.body).unwrap();
       
         Ok(TransformMessageResponse {
             success: true,
-            result: Some(response_body.to_string()),
+            result: Some(processed_message.to_string()),
         })
     }
 
@@ -71,4 +71,16 @@ impl Chatlog for ChatlogActor {
             source_user: "test user".to_string(),
         }])
     }
+}
+
+
+// Define a struct to represent the JSON response
+#[derive(Debug, Serialize, Deserialize)]
+struct ChatCompletion {
+    translations: Vec<Choice>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Choice {
+    text: String,
 }
