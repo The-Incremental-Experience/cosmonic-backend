@@ -10,6 +10,7 @@ mod chatlog;
 mod outbound;
 
 const CHATLOG_ACTOR:&str = "mcchat/chatlog";
+const COHERE_ACTOR:&str = "mcchat/cohere";
 
 #[derive(Debug, Default, Actor, HealthResponder)]
 #[services(Actor, Chatlog)]
@@ -27,9 +28,11 @@ impl Chatlog for ApiGatewayActor {
     ) -> RpcResult<TransformMessageResponse> {
 
         // TODO: add here to logic to decide which actor to call ( currently it always calls chatlog actor - > a misleading title for translator)
-        let chatlog = ChatlogSender::to_actor(CHATLOG_ACTOR);
+        // let chatlog = ChatlogSender::to_actor(CHATLOG_ACTOR);
+        // let res = chatlog.transform_message(ctx, arg).await;
 
-        let res = chatlog.transform_message(ctx, arg).await;
+        let cohere = ChatlogSender::to_actor(COHERE_ACTOR);
+        let res = cohere.transform_message(ctx, arg).await;
 
         res
     }
