@@ -2,6 +2,7 @@ use chatlog::*;
 use serde::{Serialize, Deserialize};
 use wasmbus_rpc::actor::prelude::*;
 use wasmcloud_interface_httpclient::*;
+use wasmcloud_interface_keyvalue::*;
 use wasmcloud_interface_logging::info;
 
 #[allow(dead_code)]
@@ -22,10 +23,13 @@ impl Chatlog for ChatlogActor {
         arg: &CanonicalChatMessage,
     ) -> RpcResult<TransformMessageResponse> {
 
+        let kv = KeyValueSender::new();
+        let key = kv.get(ctx, "CHATLOG_KEY").await?;
+
         let client = HttpClientSender::new();
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type".to_string(), vec!["application/json".to_string()]);
-        headers.insert("Ocp-Apim-Subscription-Key".to_string(),  vec!["e27dc23e420944bbb0eb7cae2690a577".to_string()]);
+        headers.insert("Ocp-Apim-Subscription-Key".to_string(),  vec![key.value]);
        // headers.insert("X-ClientTraceId".to_string(),  vec!["1234".to_string()]); needs to be random, or maybe dont need at all
         headers.insert("Ocp-Apim-Subscription-Region".to_string(),  vec!["westeurope".to_string()]);
 
