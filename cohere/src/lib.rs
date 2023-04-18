@@ -1,7 +1,8 @@
 use chatlog::*;
 use wasmbus_rpc::actor::prelude::*;
 use wasmcloud_interface_httpclient::*;
-
+use serde::{Deserialize, Serialize};
+use wasmcloud_interface_keyvalue::*;
 #[allow(dead_code)]
 mod chatlog;
 mod store;
@@ -20,10 +21,14 @@ impl Chatlog for CohereActor {
         ctx: &Context,
         arg: &CanonicalChatMessage,
     ) -> RpcResult<TransformMessageResponse> {
+
+        let kv = KeyValueSender::new();
+        let key = kv.get(ctx, "COHERE_KEY").await?;
+
         let client = HttpClientSender::new();
         let mut headers = HeaderMap::new();
         headers.insert("accept".to_string(), vec!["application/json".to_string()]);
-        headers.insert("authorization".to_string(), vec!["Bearer wilJVepgbMNVHebtIy8hYVnAQhvoJu5Qkp9UQEW2".to_string()]);
+        headers.insert("authorization".to_string(), vec![key.value]);
         headers.insert("content-type".to_string(), vec!["application/json".to_string()]);
 
         let body = "{\"max_tokens\": 20, \"return_likelihoods\": \"NONE\", \"truncate\": \"END\", \"prompt\": \"".to_owned()
@@ -41,26 +46,20 @@ impl Chatlog for CohereActor {
             .request(
                 ctx, &request).await?;
 
-        let response_body: &str = std::str::from_utf8(&cohere_response.body).unwrap();
-        let mut processed_message = (&arg.body).to_owned();
-        let match_result = response_body.match_indices("\"text\":\"").next();
-        let match_end = response_body.match_indices("\"}],\"prompt\"").next();
-        if match_result.is_some() && match_end.is_some() {
-            processed_message = "{\"message\": \"".to_owned() + &response_body[(match_result.unwrap().0 + 8)..match_end.unwrap().0] + "\"}"
-        }
+        let mut processed_message = (&arg.body).to_owned(); 
+        
+        if (cohere_response.status_code == 200){
+                    
+        let response_body = std::str::from_utf8(&cohere_response.body).unwrap();
+                    //info!("{:?}", response_body.clone());
+        let chat_completion: ChatCompletion = serde_json::from_str(response_body).unwrap();
+                    //info!("{:?}", chat_completion.choices[0].message.content);
+        processed_message = chat_completion.generations[0].text.clone();
+}
 
-        let mut arg2 = arg.clone();
-        arg2.body = processed_message;
-
-        Ok(match store::write_message(ctx, &arg2).await {
-            Ok(_) => TransformMessageResponse {
-                success: true,
-                result: Some(arg2.body),
-            },
-            Err(e) => TransformMessageResponse {
-                success: false,
-                result: None,
-            },
+        Ok(TransformMessageResponse {
+            success: true,
+            result: Some(processed_message.to_string()),
         })
     }
 
@@ -72,3 +71,15 @@ impl Chatlog for CohereActor {
         })
     }
 }
+
+// Define a struct to represent the JSON response
+#[derive(Debug, Serialize, Deserialize)]
+struct ChatCompletion {
+    generations: Vec<Choice>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Choice {
+    text: String,
+}
+
