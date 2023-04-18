@@ -43,7 +43,10 @@ structure CanonicalChatMessage {
     channelName: String
 
     @required
-    body: String    
+    body: String
+     
+    @required
+    method: String    
 }
 
 list MessagesList {

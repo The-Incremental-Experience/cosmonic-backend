@@ -4,5 +4,5 @@ type = "actor"
 version = "0.1.0"
 
 [actor]
-claims = ["cosmonic:samples:chatlog", "wasmcloud:builtin:logging"]
+claims = ["cosmonic:samples:chatlog", "wasmcloud:builtin:logging", "wasmcloud:keyvalue"]
 call_alias = "mcchat/api"

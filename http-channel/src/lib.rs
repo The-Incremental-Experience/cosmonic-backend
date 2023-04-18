@@ -1,6 +1,7 @@
 use chatlog::*;
 use outbound::*;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use wasmbus_rpc::actor::prelude::*;
 use wasmcloud_interface_httpserver::*;
 use wasmcloud_interface_logging::debug;
@@ -49,24 +50,51 @@ async fn transform_message(ctx: &Context, im: IncomingMessage) -> RpcResult<Http
     let numgen = NumberGenSender::new();
     let guid = numgen.generate_guid(ctx).await.unwrap_or("n/a".to_string());
 
-    logger
+    match logger
         .transform_message(
             ctx,
             &CanonicalChatMessage {
-                body: im.body,
+                body: im.body.body,
                 channel_name: CHANNEL_NAME.to_string(),
                 id: guid,
-                source_user: im.user_name,
+                method: im.method,
+                source_user: im.body.user_name,
             },
         )
         .await
-        .map(|r| r.into())
+        {
+            Ok(r) => {
+                
+                let mut res_headers = HeaderMap::new();
+
+                res_headers.insert(
+                    "Access-Control-Allow-Origin".to_string(),
+                    vec!["*".to_string()],
+                );
+                res_headers.insert(
+                    "Access-Control-Allow-Methods".to_string(),
+                    vec!["GET".to_string(), "POST".to_string(), "PUT".to_string()],
+                );
+                res_headers.insert(
+                    "Access-Control-Allow-Headers".to_string(),
+                    vec!["*".to_string()],
+                );
+                //let mut headers: HeaderMap = HeaderMap::new();
+                //headers.insert("ACCESS_CONTROL_ALLOW_ORIGIN".to_string(), vec!["*".to_string()]);
+                let response: Result<HttpResponse, RpcError> =  HttpResponse::json_with_headers(r, 200,  res_headers);    
+                response
+            },
+            Err(e) => Ok(HttpResponse::internal_server_error(format!("{}", e))),
+        }
 }
 
 async fn get_messages(ctx: &Context) -> RpcResult<HttpResponse> {
     let logger = ChatlogSender::to_actor(API_ACTOR);
     match logger.get_messages(ctx).await {
-        Ok(r) => HttpResponse::json(r, 200),
+        Ok(r) => {
+            let mut response =  HttpResponse::json(r, 200);
+            response
+        }
         Err(e) => Ok(HttpResponse::internal_server_error(format!("{}", e))),
     }
 }
@@ -77,6 +105,11 @@ fn deser<'de, T: Deserialize<'de>>(raw: &'de [u8]) -> RpcResult<T> {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct IncomingMessage {
+    method: String,
+    body: IncomingMessageinner,
+}
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct IncomingMessageinner {
     user_name: String,
     body: String,
 }

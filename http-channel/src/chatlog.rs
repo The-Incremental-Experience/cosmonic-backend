@@ -31,6 +31,8 @@ pub struct CanonicalChatMessage {
     pub channel_name: String,
     #[serde(default)]
     pub id: String,
+    #[serde(default)]
+    pub method: String,
     #[serde(rename = "sourceUser")]
     #[serde(default)]
     pub source_user: String,
@@ -46,13 +48,15 @@ pub fn encode_canonical_chat_message<W: wasmbus_rpc::cbor::Write>(
 where
     <W as wasmbus_rpc::cbor::Write>::Error: std::fmt::Display,
 {
-    e.map(4)?;
+    e.map(5)?;
     e.str("body")?;
     e.str(&val.body)?;
     e.str("channelName")?;
     e.str(&val.channel_name)?;
     e.str("id")?;
     e.str(&val.id)?;
+    e.str("method")?;
+    e.str(&val.method)?;
     e.str("sourceUser")?;
     e.str(&val.source_user)?;
     Ok(())
@@ -67,6 +71,7 @@ pub fn decode_canonical_chat_message(
         let mut body: Option<String> = None;
         let mut channel_name: Option<String> = None;
         let mut id: Option<String> = None;
+        let mut method: Option<String> = None;
         let mut source_user: Option<String> = None;
 
         let is_array = match d.datatype()? {
@@ -85,7 +90,8 @@ pub fn decode_canonical_chat_message(
                     0 => body = Some(d.str()?.to_string()),
                     1 => channel_name = Some(d.str()?.to_string()),
                     2 => id = Some(d.str()?.to_string()),
-                    3 => source_user = Some(d.str()?.to_string()),
+                    3 => method = Some(d.str()?.to_string()),
+                    4 => source_user = Some(d.str()?.to_string()),
                     _ => d.skip()?,
                 }
             }
@@ -96,6 +102,7 @@ pub fn decode_canonical_chat_message(
                     "body" => body = Some(d.str()?.to_string()),
                     "channelName" => channel_name = Some(d.str()?.to_string()),
                     "id" => id = Some(d.str()?.to_string()),
+                    "method" => method = Some(d.str()?.to_string()),
                     "sourceUser" => source_user = Some(d.str()?.to_string()),
                     _ => d.skip()?,
                 }
@@ -126,11 +133,19 @@ pub fn decode_canonical_chat_message(
                 ));
             },
 
+            method: if let Some(__x) = method {
+                __x
+            } else {
+                return Err(RpcError::Deser(
+                    "missing field CanonicalChatMessage.method (#3)".to_string(),
+                ));
+            },
+
             source_user: if let Some(__x) = source_user {
                 __x
             } else {
                 return Err(RpcError::Deser(
-                    "missing field CanonicalChatMessage.source_user (#3)".to_string(),
+                    "missing field CanonicalChatMessage.source_user (#4)".to_string(),
                 ));
             },
         }
