@@ -4,6 +4,7 @@ use wasmcloud_interface_httpclient::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use wasmcloud_interface_logging::{error, info};
+use wasmcloud_interface_keyvalue::*;
 #[allow(dead_code)]
 mod chatlog;
 
@@ -23,10 +24,13 @@ impl Chatlog for ChatgptActor {
         arg: &CanonicalChatMessage,
     ) -> RpcResult<TransformMessageResponse> {
 
+        let kv = KeyValueSender::new();
+        let key = kv.get(ctx, "CHATGPT_KEY").await?;
+
         let client = HttpClientSender::new();
         let mut headers = HeaderMap::new();
         headers.insert("Content-Type".to_string(), vec!["application/json".to_string()]);
-        headers.insert("Authorization".to_string(),  vec!["Bearer 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".to_string()]);
+        headers.insert("Authorization".to_string(),  vec![key.value]);
        // headers.insert("X-ClientTraceId".to_string(),  vec!["1234".to_string()]); needs to be random, or maybe dont need at all
        
 
