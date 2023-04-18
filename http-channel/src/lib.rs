@@ -1,6 +1,7 @@
 use chatlog::*;
 use outbound::*;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use wasmbus_rpc::actor::prelude::*;
 use wasmcloud_interface_httpserver::*;
 use wasmcloud_interface_logging::debug;
@@ -49,7 +50,7 @@ async fn transform_message(ctx: &Context, im: IncomingMessage) -> RpcResult<Http
     let numgen = NumberGenSender::new();
     let guid = numgen.generate_guid(ctx).await.unwrap_or("n/a".to_string());
 
-    logger
+    match logger
         .transform_message(
             ctx,
             &CanonicalChatMessage {
@@ -61,13 +62,25 @@ async fn transform_message(ctx: &Context, im: IncomingMessage) -> RpcResult<Http
             },
         )
         .await
-        .map(|r| r.into())
+        {
+            Ok(r) => {
+                
+                let mut headers: HeaderMap = HeaderMap::new();
+                headers.insert("ACCESS_CONTROL_ALLOW_ORIGIN".to_string(), vec!["*".to_string()]);
+                let response: Result<HttpResponse, RpcError> =  HttpResponse::json_with_headers(r, 200,  headers);    
+                response
+            },
+            Err(e) => Ok(HttpResponse::internal_server_error(format!("{}", e))),
+        }
 }
 
 async fn get_messages(ctx: &Context) -> RpcResult<HttpResponse> {
     let logger = ChatlogSender::to_actor(API_ACTOR);
     match logger.get_messages(ctx).await {
-        Ok(r) => HttpResponse::json(r, 200),
+        Ok(r) => {
+            let mut response =  HttpResponse::json(r, 200);
+            response
+        }
         Err(e) => Ok(HttpResponse::internal_server_error(format!("{}", e))),
     }
 }
