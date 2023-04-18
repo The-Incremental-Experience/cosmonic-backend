@@ -4,6 +4,7 @@ use serde::Deserialize;
 use wasmbus_rpc::actor::prelude::*;
 use wasmcloud_interface_logging::{error, info};
 use serde_json;
+use wasmcloud_interface_keyvalue::*;
 
 #[allow(dead_code)]
 mod chatlog;
@@ -11,6 +12,8 @@ mod chatlog;
 #[allow(dead_code)]
 mod outbound;
 
+
+const MESSAGE_LIST_KEY: &str = "cohere:messages";
 const CHATGPT_ACTOR: &str = "mcchat/chatgpt";
 const COHERE_ACTOR: &str = "mcchat/cohere";
 const CHATLOG_ACTOR: &str = "mcchat/chatlog";
@@ -35,12 +38,16 @@ impl Chatlog for ApiGatewayActor {
         //let body: serde_json::Value = serde_json::from_str(&arg.body).unwrap();
         // todo: use body["method"].as_str().unwrap() instead of "prettify"
 
-        let actor_id: &str = self.get_routing(&arg.method).await;
+        let mut method = &arg.method;        
+        let kv = KeyValueSender::new();
+        let actor_id = kv.get(ctx, method).await?;
+
+        //let actor_id: &str = self.get_routing(ctx, &arg.method).await;
         //let mut arg2 = arg.clone();
         // todo: use body["body"] instead of "sheep"
         //arg2.body = "sheep".to_owned();
 
-        let service_actor = ChatlogSender::to_actor(actor_id);
+        let service_actor = ChatlogSender::to_actor(&actor_id.value);
         service_actor.transform_message(ctx, arg).await
     }
 
@@ -49,19 +56,5 @@ impl Chatlog for ApiGatewayActor {
         let chatlog = ChatlogSender::to_actor(CHATLOG_ACTOR);
 
         chatlog.get_messages(ctx).await
-    }
-}
-
-impl ApiGatewayActor {
-    async fn get_routing(&self, mut method: &str) -> &str {
-        if method.is_empty() {
-            // default
-            method = "translate";
-        }
-        match method {
-            "translate" => CHATLOG_ACTOR,
-            "prettify" => COHERE_ACTOR,
-            _ => COHERE_ACTOR
-        }
     }
 }
