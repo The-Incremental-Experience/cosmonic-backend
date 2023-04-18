@@ -65,9 +65,23 @@ async fn transform_message(ctx: &Context, im: IncomingMessage) -> RpcResult<Http
         {
             Ok(r) => {
                 
-                let mut headers: HeaderMap = HeaderMap::new();
-                headers.insert("ACCESS_CONTROL_ALLOW_ORIGIN".to_string(), vec!["*".to_string()]);
-                let response: Result<HttpResponse, RpcError> =  HttpResponse::json_with_headers(r, 200,  headers);    
+                let mut res_headers = HeaderMap::new();
+
+                res_headers.insert(
+                    "Access-Control-Allow-Origin".to_string(),
+                    vec!["*".to_string()],
+                );
+                res_headers.insert(
+                    "Access-Control-Allow-Methods".to_string(),
+                    vec!["GET".to_string(), "POST".to_string(), "PUT".to_string()],
+                );
+                res_headers.insert(
+                    "Access-Control-Allow-Headers".to_string(),
+                    vec!["*".to_string()],
+                );
+                //let mut headers: HeaderMap = HeaderMap::new();
+                //headers.insert("ACCESS_CONTROL_ALLOW_ORIGIN".to_string(), vec!["*".to_string()]);
+                let response: Result<HttpResponse, RpcError> =  HttpResponse::json_with_headers(r, 200,  res_headers);    
                 response
             },
             Err(e) => Ok(HttpResponse::internal_server_error(format!("{}", e))),
