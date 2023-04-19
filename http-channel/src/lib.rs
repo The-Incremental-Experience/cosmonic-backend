@@ -37,8 +37,8 @@ impl HttpServer for HttpChannelActor {
         match (req.method.as_ref(), segments.as_slice()) {
             ("OPTIONS", ["messages"]) => {
                 let mut header = HeaderMap::new();
-                header.insert("Access-Control-Allow-Origin".to_string(), vec!["".to_string()]);
-                header.insert("Access-Control-Allow-Headers".to_string(), vec!["".to_string()]);
+                header.insert("Access-Control-Allow-Origin".to_string(), vec!["*".to_string()]);
+                header.insert("Access-Control-Allow-Headers".to_string(), vec!["*".to_string()]);
                 header.insert("Access-Control-Allow-Methods".to_string(), vec!["GET, OPTIONS, PUT, POST, DELETE".to_string()]);
 
                 return Ok(HttpResponse{
