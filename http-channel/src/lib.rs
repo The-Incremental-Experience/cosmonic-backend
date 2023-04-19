@@ -35,6 +35,18 @@ impl HttpServer for HttpChannelActor {
         let path = &req.path[1..req.path.len()];
         let segments: Vec<&str> = path.trim_end_matches('/').split('/').collect();
         match (req.method.as_ref(), segments.as_slice()) {
+            ("OPTIONS", ["messages"]) => {
+                let mut header = HeaderMap::new();
+                header.insert("Access-Control-Allow-Origin".to_string(), vec!["".to_string()]);
+                header.insert("Access-Control-Allow-Headers".to_string(), vec!["".to_string()]);
+                header.insert("Access-Control-Allow-Methods".to_string(), vec!["GET, OPTIONS, PUT, POST, DELETE".to_string()]);
+
+                return Ok(HttpResponse{
+                    header,
+                    status_code: 204,
+                    ..Default::default()
+                });
+            },
             ("POST", ["messages"]) => transform_message(ctx, deser(&req.body)?).await,
             ("GET", ["messages"]) => get_messages(ctx).await,
             (m, p) => {
